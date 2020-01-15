@@ -5,9 +5,8 @@ int n,m;
 int Head[80200], Cost[80200];
 int End[80200];
 int Y[80200], Next[80200];
-int p[80200], l[80200];
+int p[80200], l[80200],e[80200];
 bool PathExists= true;
-int minCost = 0, flow2=0;
 
 
 
@@ -35,8 +34,12 @@ void DeleteEdge(int name){
     if(name >=m){
         secondHalf = true;
     }
+    Head[name] = -1;
+    End[name] = -1;
     int next  = Next[name];
     if(secondHalf){
+        Head[name-m] = -1;
+        End[name - m] = -1;
         int otherNext = Next[name - m];
         for (int i = 0; i < n; ++i) {
             if(Y[i] == name){
@@ -63,6 +66,8 @@ void DeleteEdge(int name){
 
         }
     } else{
+        Head[name+m] = -1;
+        End[name+m] = -1;
         int otherNext = Next[name + m];
         for (int i = 0; i < n; ++i) {
             if(Y[i] == name){
@@ -97,19 +102,21 @@ void Dijktra(){
     bool uncoloured[n];
     l[0] = 0;
     p[0] = 0;
+    e[0] = 0;
     uncoloured [0] = true;
     for (int i = 1; i < n; ++i) {
         p[i] = 0;
         uncoloured[i] = true;
-        l[i] = 20000;
+        l[i] = INT_MAX;
+        e[i] = -1;
     }
     bool uncoloured_exist = true;
     int u = 0;
     int counter = 0;
     while(uncoloured_exist){
         counter++;
-        if(counter> 2 * m){
-            if(l[n - 1] < 20000){
+        if(counter> 4 * m+3){
+            if(l[n - 1] < INT_MAX){
                 return;
             }
             PathExists = false;
@@ -123,12 +130,13 @@ void Dijktra(){
             if(uncoloured[neighbor]){
                 if(l[neighbor] > l[u]+ Cost[next]){
                     l[neighbor] = l[u] + Cost[next];
+                    e[neighbor] = next;
                     p[neighbor] = u;
                 }
             }
             next = Next[next];
         }
-        int min = 20000;
+        int min = INT_MAX;
         for (int i = 0; i < n; ++i) {
             if(uncoloured[i]){
                 uncoloured_exist = true;
@@ -168,15 +176,10 @@ int main() {
     int path1[n];
     int i = n-1;
     while (i!=0){
-        for(int j=0;j< 2 * m; j++){
-            if(End[j] == i && Head[j]==p[i]){
-                cost1+=Cost[j];
-                path1[steps1] = i;
-                steps1++;
-                DeleteEdge(j);
-                break;
-            }
-        }
+        cost1+= Cost[e[i]];
+        path1[steps1] = i;
+        steps1++;
+        DeleteEdge(e[i]);
         i = p[i];
     }
     path1[steps1] = 0;
@@ -185,7 +188,7 @@ int main() {
 
     Dijktra();
     if(!PathExists){
-        cout<<"No solution";
+        cout<< "No solution";
         cout.flush();
         return 0;
     }
@@ -193,20 +196,17 @@ int main() {
     int path2[n];
     i = n-1;
     while (i!=0){
-        for(int j=0;j< 2 * m; j++){
-            if(End[j] == i && Head[j]==p[i]){
-                cost2+=Cost[j];
-                path2[steps2] = i;
-                steps2++;
-                break;
-            }
-        }
+        cost2+= Cost[e[i]];
+        path2[steps2] = i;
+        steps2++;
         i = p[i];
     }
     path2[steps2] = 0;
 
     if(cost1!=cost2){
         cout<<"No solution";
+        cout<<endl;
+        cout.flush();
         return 0;
     } else{
         for (int j = steps1; j >-1 ; --j) {
